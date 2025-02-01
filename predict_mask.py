@@ -3,22 +3,33 @@ import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
 from PIL import Image
+from unet_model_specific_functions import *
+
+PATCH_SIZE = 256
+
+def bce_dice_loss(y_true, y_pred):
+    """
+    Combines Binary Cross-Entropy (BCE) loss and Dice loss.
+    """
+    bce = tf.keras.losses.BinaryCrossentropy()(y_true, y_pred)  # Use TensorFlow's BCE
+    dice = dice_loss(y_true, y_pred)
+    return 0.5 * bce + 0.5 * dice  # Adjust weights as needed
 
 # define paths
-model = load_model("colab_storage/unet_model.keras")
-case_name = "HL2"
+model = load_model("colab_storage/unet_model_1.keras", custom_objects={"bce_dice_loss": bce_dice_loss})
+case_name = "HL1"
 image_folder = f"data/predicting_images/{case_name}_tiles"  # Folder containing .tif tiles
 output_mask_path = f"data/predicted_masks/{case_name}_mask.png"  # Path for the final stitched mask
 
-# Patch size (assuming tiles are 256x256)
-PATCH_SIZE = 256
-
+print("Loading the file...")
 # Get sorted list of image tiles
 image_files = sorted([f for f in os.listdir(image_folder) if f.endswith(".tif")])
+# print([f.split("_")[-2:] for f in image_files])
+
 
 # Extract dimensions from filename (assuming standard naming like tile_x_y.tif)
 # like: image_0_0.tif, image_0_1.tif, image_1_0.tif, etc.
-coords = [tuple(map(int, f.split("_")[-2:])) for f in image_files]
+coords = [tuple(map(int, f.replace(".tif", "").split("_")[-2:])) for f in image_files]
 max_x = max(c[0] for c in coords) + 1
 max_y = max(c[1] for c in coords) + 1
 

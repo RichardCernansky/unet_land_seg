@@ -8,8 +8,9 @@ import shutil
 PATCH_SIZE = 256
 
 # Input file (single .tif image)
-input_file = "data/images/HL2.tif"  # Replace with actual file path
-output_folder = "data/predicting_images/HL2_tiles"  # Folder where patches will be saved
+case_name = "HL1"
+input_file = f"data/images/{case_name}.tif"  # Replace with actual file path
+output_folder = f"data/predicting_images/{case_name}_tiles"  # Folder where patches will be saved
 
 # Deletes entire folder and its contents
 if os.path.exists(output_folder):
