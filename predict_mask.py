@@ -16,8 +16,8 @@ def bce_dice_loss(y_true, y_pred):
     return 0.5 * bce + 0.5 * dice  # Adjust weights as needed
 
 # define paths
-model = load_model("colab_storage/unet_model_1.keras", custom_objects={"bce_dice_loss": bce_dice_loss})
-case_name = "HL1"
+model = load_model("colab_storage/unet_model_aug2.keras", custom_objects={"bce_dice_loss": bce_dice_loss})
+case_name = "HL2"
 image_folder = f"data/predicting_images/{case_name}_tiles"  # Folder containing .tif tiles
 output_mask_path = f"data/predicted_masks/{case_name}_mask.png"  # Path for the final stitched mask
 
