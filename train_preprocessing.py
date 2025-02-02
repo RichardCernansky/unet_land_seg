@@ -9,13 +9,15 @@ import splitfolders
 Image.MAX_IMAGE_PIXELS = None
 # Define PATCH_SIZE and augmentation count
 PATCH_SIZE = 256
-NUM_AUGMENTATIONS = 3  # Number of augmented versions per patch
+NUM_AUGMENTATIONS = 2  # Number of augmented versions per patch
 USEFUL_PERC = 0.05  # Threshold for useful masks
 
 # Define Augmentation Pipeline (Only for Images)
 augment = A.Compose([
-    A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=1.0),
-    A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=1.0)
+    A.RandomBrightnessContrast(brightness_limit=0.05, contrast_limit=0.05, p=0.5),  # Minimal contrast change
+    A.GaussianBlur(blur_limit=(3, 5), p=0.5),  # Smooths road edges, reducing false positives
+    A.MedianBlur(blur_limit=3, p=0.3),  # Removes small noise and thin lines
+    A.Equalize(p=0.3),  # Helps balance pixel intensities without boosting edges
 ])
 
 # Define Paths
@@ -97,7 +99,7 @@ for image_name in sorted(os.listdir(img_dir)):
 
 # Print final patch count
 num_files = len([f for f in os.listdir(output_img_dir) if os.path.isfile(os.path.join(output_img_dir, f))])
-print(f"\nTotal/ideal patch count: {ideal_patch_count}/{num_files}")
+print(f"\nTotal/ideal patch count: {num_files}/{ideal_patch_count*NUM_AUGMENTATIONS+1}")
 
 # Filter images with real information (non-empty masks)
 print("Now preparing USEFUL images and masks.")
