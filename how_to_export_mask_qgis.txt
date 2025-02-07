@@ -1,12 +1,12 @@
-# export mask to .tif 
-# go to Processing -> Toolbox -> Rasterize (Vector to raster)
-# -tr [pixel size from .tif image info]
-# -te [choose tif from the layers] (Output extent field)
-gdal_rasterize -l HL1_annot -burn 255 -tr 0.000000348827562 0.000000231098525 \       
--a_nodata 0 -te 17.735762644 48.653934892 17.745580047 48.661331894 \
--ot Byte -of GTiff /Users/richardcernansky/Desktop/unet_land_seg/data/masks/HL1_annot.shp \
-/Users/richardcernansky/Desktop/hl1_label_annnot.tif
+# How to ANNOTATE
+# layer -> create layer -> new shape file -> polygons
+# right click on the layer -> open attribute table - to view and edit attributes (class)
 
-# .tif -> .png
-gdal_translate -ot Byte -of PNG /Users/richardcernansky/Desktop/hl1_label_annnot.tif \
-/Users/richardcernansky/Desktop/hl1_label_annnot.png
+# How to EXPORT
+# export mask to .tif (from .shp file, don't know what are the other files for yet) in QGIS
+# right click on the layer -> properties -> symbology -> set the colours for the classes
+# right click on the layer -> export -> save as (the is the FULL path) -> rendered image (GeoTiff) -> run
+# then this command to export to PNG file:
+gdal_translate -ot Byte -of PNG /Users/richardcernansky/Desktop/hl1_label_color.tif \
+/Users/richardcernansky/Desktop/hl1_label_color.png
+

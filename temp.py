@@ -7,7 +7,7 @@ from keras.utils import normalize
 import random
 
 PATCH_SIZE = 256
-# NUM_PROCESSED = 1000
+NUM_PROCESSED = 100
 
 COLOR_MAP = {
     (0, 0, 0): 0,        # Black → Background (Class 0)
@@ -27,7 +27,7 @@ def decode_mask(mask):
 
 # define paths
 model = load_model("colab_storage/unet_model_multiclass.keras")
-case_name = "HL1"
+case_name = "HL2"
 image_folder = f"data/predicting_images/{case_name}_tiles"  # Folder containing .tif tiles
 output_mask_path = f"data/predicted_masks/{case_name}_multiclass.png"  # Path for the final stitched mask
 
@@ -43,15 +43,13 @@ coords = [tuple(map(int, f.replace(".tif", "").split("_")[-2:])) for f in image_
 max_x = max(c[0] for c in coords) + 1
 max_y = max(c[1] for c in coords) + 1
 
+# Initialize an empty array for the final mask for inscribing
+final_mask = np.zeros((max_x * PATCH_SIZE, max_y * PATCH_SIZE), dtype=np.uint8)
 
 # Shuffle images randomly
-# random.shuffle(image_files)
+random.shuffle(image_files)
 # Select only 2000 images
-image_files = image_files[:]
-
-
-# Initialize an empty array for the final RGB mask
-final_mask = np.zeros(((max_x + 1) * PATCH_SIZE, (max_y + 1) * PATCH_SIZE, 3), dtype=np.uint8)
+image_files = image_files[:NUM_PROCESSED]
 
 # Process each tile
 print("Model started predicting...")
@@ -69,19 +67,15 @@ for file_name in image_files:
 
     # Predict mask
     prediction = model.predict(image)
-    predicted_mask = np.argmax(prediction, axis=3)  # Convert softmax to class labels
-    predicted_mask = predicted_mask.squeeze(0)  # Now shape is (256, 256)
+    predicted_mask= np.argmax(prediction, axis=3)  # Convert softmax to class labels
+    predicted_mask= predicted_mask.squeeze(0)  # Now shape is (256, 256)
 
-    # Decode the patch into RGB
-    decoded_patch = decode_mask(predicted_mask)  # Converts (256,256) → (256,256,3)
-
-    # Store the decoded RGB patch in the correct position
+    # Store the predicted patch in the correct position
     final_mask[x_idx * PATCH_SIZE: (x_idx + 1) * PATCH_SIZE,
-               y_idx * PATCH_SIZE: (y_idx + 1) * PATCH_SIZE, :] = decoded_patch
+               y_idx * PATCH_SIZE: (y_idx + 1) * PATCH_SIZE] = predicted_mask
 
-
-# Convert final RGB mask to an image
-final_image = Image.fromarray(final_mask)  # Convert to RGB image
+decoded_mask = decode_mask(final_mask)  # Converts (H, W) → (H, W, 3)
+final_image = Image.fromarray(decoded_mask)  # Convert to RGB image
 final_image.save(output_mask_path)
 
-print(f"Final stitched RGB mask saved as {output_mask_path}")
+print(f"Final stitched mask saved as {output_mask_path}")
