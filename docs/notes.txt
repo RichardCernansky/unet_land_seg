@@ -1,0 +1,10 @@
+# spytat sa na vysku v ktorej to je vyfotene
+# potrebujem viac dat, najlepsie vyfotene v rovnakom case (a rovnakej vyske)
+# ukazat HL1 binary a multi class a HL2 tiez a problem
+
+WORKFLOW:
+- tile_image.py - tiles one image into patches of specified size
+- train_preprocessing.py - tiles images and masks in folder data/images and data/masks into patches of specified size
+- temp_predict.py
+- unet_model_specific_functions.py - deprecated i guess
+- generate_mask_circles.py - generates masks from circles with centers from centers file, deprecated

@@ -6,10 +6,10 @@ directories=(
     "256_patches/masks"
     "256_patches/images_with_useful_info/images"
     "256_patches/images_with_useful_info/masks"
-    "dataset/aug/train/images"
-    "dataset/aug/train/masks"
-    "dataset/aug/val/images"
-    "dataset/aug/val/masks"
+    "dataset/train/images"
+    "dataset/train/masks"
+    "dataset/val/images"
+    "dataset/val/masks"
 )
 
 # Remove and recreate each directory

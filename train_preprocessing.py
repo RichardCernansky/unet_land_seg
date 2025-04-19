@@ -10,7 +10,7 @@ Image.MAX_IMAGE_PIXELS = None
 
 # Define PATCH_SIZE and augmentation count
 PATCH_SIZE = 256
-NUM_AUGMENTATIONS = 0  # Number of augmented versions per patch
+# NUM_AUGMENTATIONS = 0  # Number of augmented versions per patch
 USEFUL_PERC = 0.05  # Threshold for useful masks
 
 # Define Augmentation Pipeline (Only for Images)
@@ -31,8 +31,8 @@ USEFUL_PERC = 0.05  # Threshold for useful masks
 
 # Define Paths
 root_directory = 'data/'
-img_dir = os.path.join(root_directory, "images")
-mask_dir = os.path.join(root_directory, "masks")
+img_dir = "data/images" 
+mask_dir = "data/masks"
 
 output_img_dir = os.path.join(root_directory, "256_patches/images")
 output_mask_dir = os.path.join(root_directory, "256_patches/masks")
@@ -45,6 +45,7 @@ os.makedirs(useful_info_img_dir, exist_ok=True)
 os.makedirs(useful_info_mask_dir, exist_ok=True)
 
 
+# go through the .tif images and patch each one and its corresponding mask (optional: generate augmentations)
 # Initialize ideal patch count
 ideal_patch_count = 0
 # Iterate through images and masks
@@ -110,11 +111,12 @@ for image_name in sorted(os.listdir(img_dir)):
 
         print(f"Processed {y_num_patches * x_num_patches} patches for: {image_name}")
 
-# Print final patch count
+# check the final patch count with the ideal patch count
 num_files = len([f for f in os.listdir(output_img_dir) if os.path.isfile(os.path.join(output_img_dir, f))])
-print(f"\nTotal/ideal patch count: {num_files}/{ideal_patch_count*NUM_AUGMENTATIONS+1}")
+print(f"\nTotal/ideal patch count: {num_files}/{ideal_patch_count+1}") #if augmenting dont forget about NUM_AUGMENTATIONS
 
-# Filter images with real information (non-empty masks)
+# go through all the images and masks in the output dir of the previous operation and
+# filter images with real information (non-empty masks) into folder images_with_useful_info
 print("Now preparing USEFUL images and masks.")
 useless = 0  # Useless image counter
 for img_name in sorted(os.listdir(output_img_dir)):  # Iterate through processed images
@@ -133,12 +135,11 @@ for img_name in sorted(os.listdir(output_img_dir)):  # Iterate through processed
         print(f"Warning: Could not load {mask_name} or {img_name}")
         continue
 
+    # get useful ratio
     # Convert mask from BGR to grayscale to check for non-black pixels
     non_black_pixels = np.count_nonzero(np.any(temp_mask != [0, 0, 0], axis=-1))
-
     # Get total pixels
     total_pixels = temp_mask.shape[0] * temp_mask.shape[1]
-
     # Calculate useful area percentage
     useful_ratio = non_black_pixels / total_pixels
 
@@ -151,20 +152,17 @@ for img_name in sorted(os.listdir(output_img_dir)):  # Iterate through processed
 print(f"Total useful images: {len(os.listdir(output_img_dir)) - useless}")
 print(f"Total useless images: {useless}")
 
-# Now split the dataset into training and validation sets
+# Split the dataset into training and validation sets
 print("#####...SPLITTING...#####")
 input_folder = os.path.join(root_directory, "256_patches/images_with_useful_info/")
-output_folder = os.path.join(root_directory, "dataset/aug")
+output_folder = os.path.join(root_directory, "dataset/")
 
-# Ensure the dataset is properly structured for segmentation
 splitfolders.ratio(input_folder, output=output_folder, seed=42, ratio=(0.75, 0.25), group_prefix=None)
 
 print(f"Dataset split into train and val in path: {output_folder}")
-
 """
 Final dataset structure:
 dataset/
-    aug/
         train/
             images/
                 img1.tif, img2.tif, ...

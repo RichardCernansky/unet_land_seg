@@ -29,7 +29,7 @@ def tile_single_tif_image(input_file, output_folder):
     image = tiff.imread(input_file)  # Reads as a NumPy array
 
     # Debugging: Print shape of the image
-    print(f"✅ Loaded image: {input_file}")
+    print(f"Loaded image: {input_file}")
     print(f"Image shape before processing: {image.shape}")
 
     # Ensure it's at least a 3D array for compatibility
@@ -48,7 +48,7 @@ def tile_single_tif_image(input_file, output_folder):
     patches_img = patchify(image, (PATCH_SIZE, PATCH_SIZE, image.shape[-1]), step=PATCH_SIZE)
 
     # Debugging: Print the number of patches
-    print(f"🔹 Extracted patches shape: {patches_img.shape}")
+    print(f"Extracted patches shape: {patches_img.shape}")
 
     # Save patches
     patch_count = 0
