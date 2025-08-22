@@ -10,3 +10,16 @@
 gdal_translate -ot Byte -of PNG /Users/richardcernansky/Desktop/hl1_label_color.tif \
 /Users/richardcernansky/Desktop/hl1_label_color.png
 
+Mask EXPORT (22.8. 2025)
+gdalsrsinfo -o epsg OrazanePoleRGB.tif              //get EPSG info about .tif
+ogrinfo -so -al Buriny.shp | head -n 40 | grep EPSG //get EPSG info about .shp
+
+// create blank mask with the same grid as reference
+gdal_calc.py -A OrazanePoleRGB.tif --A_band=1 --calc="0" --type=Byte --NoDataValue=0 --overwrite --outfile=Buriny_mask.tif
+// burn polygons into that mask (1 inside polygons, 0 elsewhere)
+gdal_rasterize -burn 1 -at -l Buriny Buriny.shp Buriny_mask.tif
+// verify alignment
+gdalinfo OrazanePoleRGB.tif | egrep "Size is|Origin|Pixel Size"
+gdalinfo Buriny_mask.tif     | egrep "Size is|Origin|Pixel Size"
+
+
