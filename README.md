@@ -124,7 +124,7 @@ python predict_mask.py
 # → writes data/predicted_masks/<CASE>.png
 ```
 
-![Alt text](./.graphics/example_buriny_predicted.png "Example of predicted mask")
+![Predicted mask](./.graphics/example_buriny_predicted.png "Example of predicted mask")
 *Figure 1. Example of predicted mask after U-Net segmentation.*
 
 ### 3) Morphological clean‑up
@@ -141,7 +141,7 @@ python predict_mask.py
   ```
 - Saves a cleaned PNG (e.g., `Buriny_post.png`).
 
-![Alt text](./.graphics/example_buriny_post.png "Example of predicted & postprocessed mask")
+![Predicted mask](./.graphics/example_buriny_post.png "Example of predicted & postprocessed mask")
 *Figure 2. Example of predicted & postprocessed mask after U-Net segmentation.*
 
 **Run:**
