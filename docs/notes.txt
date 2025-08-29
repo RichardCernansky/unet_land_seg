@@ -38,3 +38,13 @@ The whole pipeline execution:
     - train the model
     - test with predictions and visualize
 
+
+29.8. 2025
+- number of classes inference
+- global constants
+    Case name
+    model_path
+    patch_size
+    useful_perc
+    all paths/
+- refactor documentation when dealing with all the VARS and CONSTS
