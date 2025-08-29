@@ -2,3 +2,6 @@
 *.png
 *.keras
 *.zip
+
+# but keep PNGs in docs/graphics/
+!docs/graphics/*.png
