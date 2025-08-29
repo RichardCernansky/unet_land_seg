@@ -109,13 +109,12 @@ for img_name in sorted(os.listdir(output_img_dir)):
 print(f"Total useful images: {len(os.listdir(output_img_dir)) - useless}")
 print(f"Total useless images: {useless}")
 
-print("#####...SPLITTING...#####")
 input_folder = os.path.join(root_directory, "256_patches/images_with_useful_info/")
 output_folder = os.path.join(root_directory, "dataset/")
 
 splitfolders.ratio(input_folder, output=output_folder, seed=42, ratio=(0.75, 0.25), group_prefix=None)
 
-print(f"Dataset split into train and val in path: {output_folder}")
+print(f"Dataset split into train and val successfully in path: {output_folder}")
 """
 Final dataset structure:
 dataset/

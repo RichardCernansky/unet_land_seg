@@ -1,3 +1,6 @@
+# spytat sa na vysku v ktorej to je vyfotene
+# potrebujem viac dat, najlepsie vyfotene v rovnakom case (a rovnakej vyske)
+# ukazat HL1 binary a multi class a HL2 tiez a problem
 
 WORKFLOW:
 - tile_image.py - tiles one image into patches of specified size
@@ -5,4 +8,33 @@ WORKFLOW:
 - temp_predict.py
 - unet_model_specific_functions.py - deprecated i guess
 - generate_mask_circles.py - generates masks from circles with centers from centers file, deprecated
+
+
+The whole pipeline execution: 
+1. Obtain the labeled data 
+    - image data - only taken, where there is at least 5% mask area
+    - mask in .shp format, process in qgis into .png
+    - one channel mask, label encoded categories
+2. Tile images and redistribute into patch folders (train_preprocessing.py) to create dataset
+    - only images in data/images that have corresponding mask in data/masks will be patched
+    - clear patch folders and dataset using clear_data_folders.sh
+3. Train using sreeni_unet.ipynb 
+    - load images - 3 channel
+    - load masks - 1 channel (need for 3rd dimension expansion)
+    - split data into train, valid
+    - put labels to categorical 
+    (
+        [[0, 1, 2],
+        [1, 0, 2],
+        [2, 2, 0]]
+    )
+    (
+    [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+    [[0, 1, 0], [1, 0, 0], [0, 0, 1]],
+    ...
+    )
+    - class weights definition (not used yet - no improvement detected)
+    - build the model 
+    - train the model
+    - test with predictions and visualize
 
