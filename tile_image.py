@@ -8,7 +8,7 @@ import shutil
 PATCH_SIZE = 256
 
 # Input file (single .tif image)
-case_name = "HL1"
+case_name = "Buriny"
 input_file = f"data/images/{case_name}.tif"  # Replace with actual file path
 output_folder = f"data/predicting_images/{case_name}_tiles"  # Folder where patches will be saved
 

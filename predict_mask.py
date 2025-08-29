@@ -2,86 +2,62 @@ import os
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
-from PIL import Image
 from keras.utils import normalize
-import random
+from PIL import Image
+from osgeo import gdal, osr
 
+# Map class-id -> RGB for the PNG visualization
+COLOR_MAP = {(0, 0, 0): 0, (128, 128, 128): 1, (255, 0, 0): 2}
+
+def predict_and_save_rgb_png(image_folder, model_path, patch_size, output_png_path):
+    # Build a fast lookup table: class_id -> [R,G,B]
+    lut = np.zeros((max(COLOR_MAP.values()) + 1, 3), dtype=np.uint8)
+    for rgb, cid in COLOR_MAP.items():
+        lut[cid] = rgb
+
+    # Load trained model once for all tiles
+    model = load_model(model_path)
+
+    # List tiles; assume names end with "_x_y.tif" where x=row-index, y=col-index
+    files = sorted([f for f in os.listdir(image_folder) if f.lower().endswith(".tif")])
+
+    # Derive stitch grid from filenames
+    coords = [tuple(map(int, os.path.splitext(f)[0].split("_")[-2:])) for f in files]
+    max_x = max(c[0] for c in coords)
+    max_y = max(c[1] for c in coords)
+    H = (max_x + 1) * patch_size                     # full mosaic height in pixels
+    W = (max_y + 1) * patch_size                     # full mosaic width in pixels
+
+    # Allocate class-id mosaic (grayscale labels)
+    class_mask = np.zeros((H, W), dtype=np.uint8)
+
+    # Predict each tile and place its class labels into the mosaic
+    for fn in files:
+        x_idx, y_idx = map(int, os.path.splitext(fn)[0].split("_")[-2:])
+        img = cv2.imread(os.path.join(image_folder, fn), cv2.IMREAD_COLOR)
+        img = normalize(img, axis=1)                 # same normalization used at train time
+        img = np.expand_dims(img, axis=0)            # add batch dimension: (1,H,W,C)
+        pred = model.predict(img)                    # network output per-pixel class probabilities
+        lab = np.argmax(pred, axis=3).squeeze(0).astype(np.uint8)  # convert to class ids
+
+        # Compute paste window in the big mosaic
+        ys, ye = x_idx * patch_size, (x_idx + 1) * patch_size
+        xs, xe = y_idx * patch_size, (y_idx + 1) * patch_size
+
+        class_mask[ys:ye, xs:xe] = lab               # stitch class ids
+
+    # Colorize via LUT for human-friendly PNG
+    rgb_mask = lut[class_mask]                        # shape: (H,W,3), dtype=uint8
+    Image.fromarray(rgb_mask).save(output_png_path)   # write visualization PNG
+
+    return class_mask                                 # return class-id mosaic for GeoTIFF step
+
+
+# ---------- Usage ----------
+CASE_NAME = "Buriny"
 PATCH_SIZE = 256
-# NUM_PROCESSED = 1000
+MODEL_PATH = "./data/models/unet_model_multiclass_buriny.keras"
+TILE_DIR = f"data/predicting_images/{CASE_NAME}_tiles"
+PNG_OUT = f"data/predicted_masks/{CASE_NAME}.png"
 
-COLOR_MAP = {
-    (0, 0, 0): 0,        # Black → Background (Class 0)
-    (128, 128, 128): 1,  # Gray → Roads (Class 1)
-    (255, 0, 0): 2       # Red → Rodents (Class 2)
-}
-
-def decode_mask(mask):
-    h, w = mask.shape  # Get height & width
-    rgb_mask = np.zeros((h, w, 3), dtype=np.uint8)  # Initialize RGB mask
-
-    # Assign RGB colors correctly using broadcasting
-    for rgb, class_id in COLOR_MAP.items():
-        rgb_mask[mask == class_id] = np.array(rgb, dtype=np.uint8)  # Assign RGB color
-
-    return rgb_mask
-
-# define paths
-model = load_model("colab_storage/unet_model_multiclass.keras")
-case_name = "HL1"
-image_folder = f"data/predicting_images/{case_name}_tiles"  # Folder containing .tif tiles
-output_mask_path = f"data/predicted_masks/{case_name}_multiclass.png"  # Path for the final stitched mask
-
-print("Loading the file...")
-# Get sorted list of image tiles
-image_files = sorted([f for f in os.listdir(image_folder) if f.endswith(".tif")])
-# print([f.split("_")[-2:] for f in image_files])
-
-
-# Extract dimensions from filename (assuming standard naming like tile_x_y.tif)
-# like: image_0_0.tif, image_0_1.tif, image_1_0.tif, etc.
-coords = [tuple(map(int, f.replace(".tif", "").split("_")[-2:])) for f in image_files]
-max_x = max(c[0] for c in coords) + 1
-max_y = max(c[1] for c in coords) + 1
-
-
-# Shuffle images randomly
-# random.shuffle(image_files)
-# Select only 2000 images
-image_files = image_files[:]
-
-
-# Initialize an empty array for the final RGB mask
-final_mask = np.zeros(((max_x + 1) * PATCH_SIZE, (max_y + 1) * PATCH_SIZE, 3), dtype=np.uint8)
-
-# Process each tile
-print("Model started predicting...")
-
-for file_name in image_files:
-    # Extract x, y position from the filename
-    parts = file_name.replace(".tif", "").split("_")
-    x_idx, y_idx = int(parts[-2]), int(parts[-1])
-
-    # Read and preprocess the image
-    img_path = os.path.join(image_folder, file_name)
-    image = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    image = normalize(image, axis=1)
-    image = np.expand_dims(image, axis=0)  # Add batch dimension
-
-    # Predict mask
-    prediction = model.predict(image)
-    predicted_mask = np.argmax(prediction, axis=3)  # Convert softmax to class labels
-    predicted_mask = predicted_mask.squeeze(0)  # Now shape is (256, 256)
-
-    # Decode the patch into RGB
-    decoded_patch = decode_mask(predicted_mask)  # Converts (256,256) → (256,256,3)
-
-    # Store the decoded RGB patch in the correct position
-    final_mask[x_idx * PATCH_SIZE: (x_idx + 1) * PATCH_SIZE,
-               y_idx * PATCH_SIZE: (y_idx + 1) * PATCH_SIZE, :] = decoded_patch
-
-
-# Convert final RGB mask to an image
-final_image = Image.fromarray(final_mask)  # Convert to RGB image
-final_image.save(output_mask_path)
-
-print(f"Final stitched RGB mask saved as {output_mask_path}")
+class_mask = predict_and_save_rgb_png(TILE_DIR, MODEL_PATH, PATCH_SIZE, PNG_OUT)   # writes RGB PNG
